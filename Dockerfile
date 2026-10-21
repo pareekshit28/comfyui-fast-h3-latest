@@ -30,9 +30,7 @@ RUN echo "Updating ComfyUI: ref=${COMFYUI_REF}, update=${COMFYUI_UPDATE}" \
 
 # Disable the model compiler (including CUDA graphs) for the OOM comparison.
 # Patch both startup modes while retaining the inherited RunPod handler.
-RUN sed -i \\
-    's|/comfyui/main\\.py |/comfyui/main.py --disable-comfy-compiler |g' \\
-    /start.sh
+RUN sed -i 's|/comfyui/main[.]py |/comfyui/main.py --disable-comfy-compiler |g' /start.sh
 
 # Match the base image's transformer/hub constraints and runtime Python above.
 # Fail the image build if the sparse-attention module cannot import or ComfyUI
