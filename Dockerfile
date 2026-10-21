@@ -28,11 +28,17 @@ RUN echo "Updating ComfyUI: ref=${COMFYUI_REF}, update=${COMFYUI_UPDATE}" \
        -r /comfyui/requirements.txt \
        "transformers>=4.50.3,<5" "huggingface-hub<1.0"
 
+# Disable the model compiler (including CUDA graphs) for the OOM comparison.
+# Patch both startup modes while retaining the inherited RunPod handler.
+RUN sed -i \\
+    's|/comfyui/main\\.py |/comfyui/main.py --disable-comfy-compiler |g' \\
+    /start.sh
+
 # Match the base image's transformer/hub constraints and runtime Python above.
 # Fail the image build if the sparse-attention module cannot import or ComfyUI
 # cannot initialize on CPU. This does not run a model or verify GPU rendering.
 RUN cd /comfyui \
-    && /opt/venv/bin/python -c 'import sys; sys.argv = ["verify_nodes", "--cpu"]; import comfy.options; comfy.options.enable_args_parsing(); from comfy_extras.nodes_sparse_attention import BlockSparseAttention; print("BlockSparseAttention import OK")' \
-    && timeout 300 /opt/venv/bin/python main.py --quick-test-for-ci --cpu
+    && /opt/venv/bin/python -c 'import sys; sys.argv = ["verify_nodes", "--cpu", "--disable-comfy-compiler"]; import comfy.options; comfy.options.enable_args_parsing(); from comfy_extras.nodes_sparse_attention import BlockSparseAttention; print("BlockSparseAttention import OK")' \
+    && timeout 300 /opt/venv/bin/python main.py --quick-test-for-ci --cpu --disable-comfy-compiler
 
 # Retain the base image's /start.sh command and RunPod handler.
